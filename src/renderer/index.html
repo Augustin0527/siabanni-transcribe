@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>Siabanni Transcribe</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Barre laterale -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">S</div>
+        <div class="brand-text">
+          <div class="brand-name">Siabanni</div>
+          <div class="brand-sub">Transcribe</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item active" data-tab="live">
+          <span class="nav-icon">🎙️</span>
+          <span>Direct (live)</span>
+        </button>
+        <button class="nav-item" data-tab="file">
+          <span class="nav-icon">📁</span>
+          <span>Fichier audio/vidéo</span>
+        </button>
+        <button class="nav-item" data-tab="result">
+          <span class="nav-icon">📝</span>
+          <span>Transcription</span>
+        </button>
+        <button class="nav-item" data-tab="settings">
+          <span class="nav-icon">⚙️</span>
+          <span>Paramètres</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="credits">
+          <div>par le <strong>Consortium SFR</strong></div>
+          <div class="version">v1.0.0</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Zone principale -->
+    <main class="content">
+      <!-- Onglet Live -->
+      <section class="panel active" id="tab-live">
+        <header class="panel-header">
+          <h1>Transcription en direct</h1>
+          <p>Enregistre et transcris en temps réel ta réunion ou ton entretien.</p>
+        </header>
+
+        <div class="card">
+          <div class="row">
+            <div class="field">
+              <label>Langue</label>
+              <select id="live-language">
+                <option value="auto">Détection automatique</option>
+                <option value="fr">Français</option>
+                <option value="en">Anglais</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Source audio</label>
+              <select id="live-source">
+                <option value="microphone">Microphone</option>
+                <option value="system">Audio système (réunion en cours)</option>
+                <option value="both">Les deux (micro + système)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Titre de la session</label>
+              <input type="text" id="live-title" placeholder="ex: Entretien Jean Dupont - 17/04/2026" />
+            </div>
+          </div>
+
+          <div class="recorder">
+            <div class="recorder-status">
+              <div class="indicator" id="live-indicator"></div>
+              <div class="status-text" id="live-status">Prêt à démarrer</div>
+              <div class="timer" id="live-timer">00:00:00</div>
+            </div>
+            <div class="recorder-controls">
+              <button class="btn btn-primary" id="btn-start">
+                <span class="btn-icon">●</span> Démarrer l'enregistrement
+              </button>
+              <button class="btn btn-danger" id="btn-stop" disabled>
+                <span class="btn-icon">■</span> Arrêter
+              </button>
+              <button class="btn btn-secondary" id="btn-pause" disabled>
+                <span class="btn-icon">❚❚</span> Pause
+              </button>
+            </div>
+          </div>
+
+          <div class="live-transcript" id="live-transcript">
+            <p class="placeholder">La transcription apparaîtra ici au fur et à mesure de l'enregistrement...</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Onglet Fichier -->
+      <section class="panel" id="tab-file">
+        <header class="panel-header">
+          <h1>Transcription d'un fichier</h1>
+          <p>Importe un fichier audio ou vidéo existant pour le transcrire.</p>
+        </header>
+
+        <div class="card">
+          <div class="dropzone" id="dropzone">
+            <div class="dropzone-inner">
+              <div class="dropzone-icon">📂</div>
+              <div class="dropzone-text">
+                <strong>Glisse-dépose un fichier ici</strong>
+                <span>ou clique pour choisir</span>
+              </div>
+              <div class="dropzone-formats">MP3, WAV, M4A, MP4, MOV, MKV, WebM, OGG, FLAC...</div>
+            </div>
+          </div>
+
+          <div class="file-info" id="file-info" style="display:none">
+            <div class="file-name" id="file-name"></div>
+            <button class="btn btn-ghost" id="btn-file-remove">×</button>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label>Langue</label>
+              <select id="file-language">
+                <option value="auto">Détection automatique</option>
+                <option value="fr">Français</option>
+                <option value="en">Anglais</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Modèle Whisper</label>
+              <select id="file-model">
+                <option value="tiny">Tiny (rapide, moins précis)</option>
+                <option value="base" selected>Base (équilibré)</option>
+                <option value="small">Small (précis)</option>
+                <option value="medium">Medium (très précis, plus lent)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="progress-wrap" id="file-progress-wrap" style="display:none">
+            <div class="progress-bar"><div class="progress-fill" id="file-progress-fill"></div></div>
+            <div class="progress-label" id="file-progress-label">Préparation...</div>
+          </div>
+
+          <div class="actions">
+            <button class="btn btn-primary" id="btn-transcribe-file" disabled>
+              Lancer la transcription
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Onglet Résultat -->
+      <section class="panel" id="tab-result">
+        <header class="panel-header">
+          <h1>Transcription</h1>
+          <p>Résultat de la transcription. Tu peux éditer, traduire, résumer et exporter.</p>
+        </header>
+
+        <div class="card">
+          <div class="toolbar">
+            <button class="btn btn-ghost" id="btn-copy">📋 Copier</button>
+            <button class="btn btn-ghost" id="btn-clear">🗑️ Effacer</button>
+            <div class="spacer"></div>
+            <button class="btn btn-secondary" id="btn-summarize">✨ Résumé IA</button>
+            <button class="btn btn-secondary" id="btn-translate">🌍 Traduire</button>
+          </div>
+
+          <div class="transcript-editor">
+            <textarea id="transcript-text" placeholder="La transcription finale s'affichera ici. Tu peux la modifier avant d'exporter."></textarea>
+          </div>
+
+          <div class="summary-box" id="summary-box" style="display:none">
+            <div class="summary-header">
+              <h3>Résumé automatique (DeepSeek AI)</h3>
+              <button class="btn btn-ghost btn-small" id="btn-close-summary">×</button>
+            </div>
+            <div class="summary-content" id="summary-content"></div>
+          </div>
+
+          <div class="toolbar">
+            <strong>Exporter :</strong>
+            <button class="btn btn-primary" id="btn-export-docx">📄 Word (.docx)</button>
+            <button class="btn btn-primary" id="btn-export-pdf">📕 PDF</button>
+            <button class="btn btn-primary" id="btn-export-txt">📃 Texte (.txt)</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Onglet Paramètres -->
+      <section class="panel" id="tab-settings">
+        <header class="panel-header">
+          <h1>Paramètres</h1>
+          <p>Configure ton application.</p>
+        </header>
+
+        <div class="card">
+          <h3>Clé API DeepSeek</h3>
+          <p class="muted">Utilisée pour les résumés automatiques et la traduction FR ↔ EN. Obtiens ta clé sur <a href="https://platform.deepseek.com" target="_blank">platform.deepseek.com</a>.</p>
+          <div class="row">
+            <div class="field field-full">
+              <label>Clé API</label>
+              <div class="input-with-action">
+                <input type="password" id="settings-api-key" placeholder="sk-..." />
+                <button class="btn btn-ghost btn-small" id="btn-toggle-key">👁️</button>
+              </div>
+            </div>
+          </div>
+
+          <h3>Transcription Whisper</h3>
+          <div class="row">
+            <div class="field">
+              <label>Modèle par défaut</label>
+              <select id="settings-model">
+                <option value="tiny">Tiny — 75 Mo — très rapide</option>
+                <option value="base">Base — 142 Mo — équilibré</option>
+                <option value="small">Small — 466 Mo — précis</option>
+                <option value="medium">Medium — 1.5 Go — très précis</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Langue par défaut</label>
+              <select id="settings-language">
+                <option value="auto">Détection automatique</option>
+                <option value="fr">Français</option>
+                <option value="en">Anglais</option>
+              </select>
+            </div>
+          </div>
+
+          <h3>Options</h3>
+          <div class="checkbox-row">
+            <label class="switch">
+              <input type="checkbox" id="settings-diarization" />
+              <span class="slider"></span>
+            </label>
+            <div>
+              <strong>Identifier les intervenants (diarisation)</strong>
+              <div class="muted small">Ajoute des étiquettes "Intervenant 1", "Intervenant 2"...</div>
+            </div>
+          </div>
+          <div class="checkbox-row">
+            <label class="switch">
+              <input type="checkbox" id="settings-timestamps" checked />
+              <span class="slider"></span>
+            </label>
+            <div>
+              <strong>Horodatage (timestamps)</strong>
+              <div class="muted small">Inclure les temps dans la transcription</div>
+            </div>
+          </div>
+
+          <h3>Dossier de sortie</h3>
+          <div class="row">
+            <div class="field field-full">
+              <div class="input-with-action">
+                <input type="text" id="settings-outdir" readonly />
+                <button class="btn btn-secondary btn-small" id="btn-choose-outdir">Parcourir...</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn btn-primary" id="btn-save-settings">Enregistrer</button>
+          </div>
+
+          <h3 style="margin-top:2rem">À propos</h3>
+          <p class="muted">
+            <strong>Siabanni Transcribe</strong> v1.0.0 — Application de transcription automatique,
+            développée par le <strong>Consortium SFR</strong>.<br>
+            Transcription locale propulsée par Whisper (OpenAI, open source).<br>
+            Résumé et traduction propulsés par DeepSeek AI.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Toast notifications -->
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <input type="file" id="file-picker" accept="audio/*,video/*" style="display:none" />
+  <script src="app.js"></script>
+</body>
+</html>
